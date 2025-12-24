@@ -47,7 +47,7 @@ async function fetchDataFromAPI(id) {
       "images": ["/image/qa/6b4d55185a33d56d8c22.jpg", "/image/qa/97c0f36fff44701a2955.jpg", "/image/qa/ccc9750a7921f67faf30.jpg", "/image/qa/e2255c61504adf14865b.jpg"],
       "song": "hoanhipgiangsinh.mp3",
       "isSave": false,
-      "letterContent": "Merry Christmas\nNay là 25/12 là ngày Lễ Noel\nMong rằng những ánh sáng lung linh của Noel sẽ mang đến cho bạn sự bình an, hạnh phúc và thật nhiều may mắn.\"\nChúc mọi điều tốt đẹp nhất sẽ đến với bạn trong mùa lễ này và suốt cả năm mới!\nGiáng Sinh vui vẻ nhé!",
+      "letterContent": "Merry Christmas\nNay là 25/12 là ngày Lễ Noel\n\nGiáng Sinh vui vẻ nhé!",
       "textEffectSeq": "Merry|Christmas",
       "createdAt": "2025-12-21T11:32:43.640Z",
       "__v": 0
@@ -773,6 +773,90 @@ function createTextAndImages() {
       console.log('Không có messages, bỏ qua tạo text objects');
     }
 
+    // Function to update image geometry and add border
+    function updateImageGeometry(texture, mesh) {
+      if (!texture || !texture.image) return;
+      const aspectRatio = texture.image.width / texture.image.height;
+      const isMobileDevice = window.isMobile || window.innerWidth <= 768;
+      const baseSize = isMobileDevice ? 10 : 15; // Giảm kích thước trên mobile để đỡ tràn viền
+      let width, height;
+
+      if (aspectRatio > 1) {
+        width = baseSize;
+        height = baseSize / aspectRatio;
+      } else {
+        width = baseSize * aspectRatio;
+        height = baseSize;
+      }
+
+      const geometry = new THREE.PlaneGeometry(width, height);
+      if (mesh.geometry) mesh.geometry.dispose();
+      mesh.geometry = geometry;
+
+      // Handle Border if enabled
+      if (mesh.userData.hasBorder) {
+        const borderWidth = isMobileDevice ? 0.4 : 0.6;
+        const borderGeo = new THREE.PlaneGeometry(width + borderWidth, height + borderWidth);
+        const borderMat = new THREE.MeshBasicMaterial({ color: 0xc87934, side: THREE.DoubleSide });
+
+        // Check if border child already exists
+        let borderMesh = mesh.children.find(c => c.name === 'border');
+        if (borderMesh) {
+          borderMesh.geometry.dispose();
+          borderMesh.geometry = borderGeo;
+        } else {
+          borderMesh = new THREE.Mesh(borderGeo, borderMat);
+          borderMesh.name = 'border';
+          borderMesh.position.z = -0.05; // Slightly behind
+          mesh.add(borderMesh);
+        }
+      }
+    }
+
+    // hàm tạo mesh ảnh 3D (dùng cache texture để đỡ tốn bộ nhớ & network)
+    function makeImageMesh(imagePath, hasBorder = false) {
+      const isMobileDevice = window.isMobile || window.innerWidth <= 768;
+      const loader = new THREE.TextureLoader();
+      const cached = textureCache[imagePath];
+
+      const geometry = new THREE.PlaneGeometry(isMobileDevice ? 9 : 12, isMobileDevice ? 9 : 12); // giảm kích thước tạm trên mobile
+      const material = new THREE.MeshBasicMaterial({
+        map: cached || null,
+        transparent: true,
+        side: THREE.DoubleSide
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.userData.hasBorder = hasBorder; // Set hasBorder early for updateImageGeometry
+
+      if (cached && cached.image) {
+        updateImageGeometry(cached, mesh);
+      } else {
+        const texture = loader.load(imagePath, function (tex) {
+          updateImageGeometry(tex, mesh);
+        });
+        textureCache[imagePath] = texture;
+        material.map = texture;
+      }
+
+      // thêm thuộc tính để điều khiển quỹ đạo bay
+      mesh.userData = {
+        originalY: mesh.position.y,
+        originalX: mesh.position.x,
+        originalZ: mesh.position.z,
+        pattern: Math.floor(Math.random() * 3), // 0: thẳng, 1: chéo trái, 2: chéo phải
+        // Default rotation speed 0
+        rotationSpeedX: 0,
+        rotationSpeedY: 0,
+        rotationSpeedZ: 0,
+        isFocused: false, // Track if item is currently focused
+        originalScale: mesh.scale.clone(), // Save original scale
+        type: 'unknown', // Will be set later
+        hasBorder: hasBorder // Ensure hasBorder is part of the final userData
+      };
+
+      return mesh;
+    }
+
     // tạo ảnh rơi xuống - Tách biệt decor và person
     const defaults = [
       "iamgedefault/—Pngtree—reindeer mascot with red glasses_23353415.png",
@@ -782,23 +866,23 @@ function createTextAndImages() {
 
     // Create DECOR objects (background items)
     // Tăng số lượng ảnh decor
-    const decorCount = window.isMobile ? 10 : 15;
-    if (Object.keys(defaults).length > 0) {
+    const decorCount = window.isMobile ? 6 : 8;
+    if (defaults.length > 0) {
       for (let i = 0; i < decorCount; i++) {
         const imagePath = defaults[i % defaults.length];
-        let imageMesh = makeImageMesh(imagePath);
+        let imageMesh = makeImageMesh(imagePath, false); // No border for decor
         imageMesh.userData.type = 'decor';
 
-        // Random rotation and flip
+        // Random rotation and flip (Initial state only)
         if (Math.random() > 0.5) {
           imageMesh.scale.x *= -1;
         }
         imageMesh.rotation.z = Math.random() * Math.PI * 2;
 
-        // Enable gentle rotation
-        imageMesh.userData.rotationSpeedX = (Math.random() - 0.5) * 0.01;
-        imageMesh.userData.rotationSpeedY = (Math.random() - 0.5) * 0.01;
-        imageMesh.userData.rotationSpeedZ = (Math.random() - 0.5) * 0.01;
+        // Disable continuous animation for decor (as per request)
+        imageMesh.userData.rotationSpeedX = 0;
+        imageMesh.userData.rotationSpeedY = 0;
+        imageMesh.userData.rotationSpeedZ = 0;
 
         const range = window.isMobile ? 40 : 90; // Wider range for decor
         imageMesh.position.set(
@@ -819,11 +903,16 @@ function createTextAndImages() {
 
       for (let i = 0; i < personCount; i++) {
         const imagePath = personImages[i % personImages.length];
-        let imageMesh = makeImageMesh(imagePath);
+        let imageMesh = makeImageMesh(imagePath, true); // ADD BORDER here
         imageMesh.userData.type = 'person';
 
         // Mark highly clickable
         imageMesh.userData.isInteractable = true;
+
+        // Gentle float rotation for person items
+        imageMesh.userData.rotationSpeedX = (Math.random() - 0.5) * 0.005;
+        imageMesh.userData.rotationSpeedY = (Math.random() - 0.5) * 0.005;
+        imageMesh.userData.rotationSpeedZ = (Math.random() - 0.5) * 0.005;
 
         const range = window.isMobile ? 30 : 60; // Narrower range for person items
         imageMesh.position.set(
