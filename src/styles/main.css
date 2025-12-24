@@ -1,0 +1,53 @@
+/* Bông tuyết emoji bằng CSS */
+
+.snowflake-emoji {
+    position: absolute;
+    font-size: 1.5em;
+    user-select: none;
+    pointer-events: none;
+    color: white;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    animation: fall-emoji linear infinite;
+    z-index: 1;
+}
+
+@keyframes fall-emoji {
+    0% {
+        transform: translateY(0) translateX(0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(calc(100vh + 100px)) translateX(var(--sway)) rotate(360deg);
+        opacity: 0.3;
+    }
+}
+
+#snowCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    display: none;
+    /* Ẩn ban đầu, sẽ hiện sau khi sách đóng */
+}
+
+#snowflakesContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    display: none;
+    /* Ẩn ban đầu, sẽ hiện sau khi sách đóng */
+}
+
+/* Ẩn Three.js scene ban đầu */
+
+.threejs-hidden {
+    display: none;
+}
