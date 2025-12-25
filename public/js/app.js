@@ -47,7 +47,7 @@ async function fetchDataFromAPI(id) {
       "images": ["/image/qa/6b4d55185a33d56d8c22.jpg", "/image/qa/97c0f36fff44701a2955.jpg", "/image/qa/ccc9750a7921f67faf30.jpg", "/image/qa/e2255c61504adf14865b.jpg"],
       "song": "hoanhipgiangsinh.mp3",
       "isSave": false,
-      "letterContent": "Merry Christmas\nNay là 25/12 là ngày Lễ Noel\n\nGiáng Sinh vui vẻ nhé!",
+      "letterContent": "Merry Christmas\nNoel noem\n\nGiáng Sinh vui vẻ nhé!\nT dành nhiều thời gian quá, t nghĩ t sẽ phải tha thứ cho bản thân hơn\n\nGặp em trong thời gian bận nhất\nEm bình yên như giọt sương mai\nGần em lòng tôi trải phẳng tắp\nGiờ đành trống trải mỗi sáng mai\n",
       "textEffectSeq": "Merry|Christmas",
       "createdAt": "2025-12-21T11:32:43.640Z",
       "__v": 0
